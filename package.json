@@ -1,6 +1,6 @@
 {
   "name": "lovable-downloader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Chrome extension to download Lovable.dev project source code as ZIP",
   "private": true,
   "scripts": {
