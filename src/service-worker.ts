@@ -306,7 +306,17 @@ async function fetchAllFiles(
 
 // --- Progress icon rendering via OffscreenCanvas ---
 
-function renderProgressIcon(progress: number): ImageData {
+let cachedIconBitmap: ImageBitmap | null = null
+
+async function getIconBitmap(): Promise<ImageBitmap> {
+  if (cachedIconBitmap) return cachedIconBitmap
+  const response = await fetch(chrome.runtime.getURL('images/128.png'))
+  const blob = await response.blob()
+  cachedIconBitmap = await createImageBitmap(blob)
+  return cachedIconBitmap
+}
+
+function renderProgressIcon(icon: ImageBitmap, progress: number): ImageData {
   const SIZE = 128
   const canvas = new OffscreenCanvas(SIZE, SIZE)
   const ctx = canvas.getContext('2d')!
@@ -315,16 +325,12 @@ function renderProgressIcon(progress: number): ImageData {
   const outerRadius = SIZE / 2 - 4
   const ringWidth = 12
 
-  // Background circle
-  ctx.beginPath()
-  ctx.arc(center, center, outerRadius, 0, Math.PI * 2)
-  ctx.fillStyle = '#f0f0f0'
-  ctx.fill()
+  ctx.drawImage(icon, 0, 0, SIZE, SIZE)
 
   // Track ring
   ctx.beginPath()
   ctx.arc(center, center, outerRadius - ringWidth / 2, 0, Math.PI * 2)
-  ctx.strokeStyle = '#d0d0d0'
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)'
   ctx.lineWidth = ringWidth
   ctx.stroke()
 
@@ -348,7 +354,8 @@ function renderProgressIcon(progress: number): ImageData {
 }
 
 async function updateProgressIcon(progress: number): Promise<void> {
-  const imageData = renderProgressIcon(progress)
+  const icon = await getIconBitmap()
+  const imageData = renderProgressIcon(icon, progress)
   await chrome.action.setIcon({
     imageData: { 128: imageData } as unknown as Record<string, ImageData>,
   })

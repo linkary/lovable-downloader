@@ -17,10 +17,10 @@ let toastContainer: HTMLElement | null = null
 const activeToasts = new Map<string, ToastEntry>()
 
 const TOAST_STYLES: Record<string, { bg: string; text: string }> = {
-  info: { bg: '#E5DEFF', text: '#6E59A5' },
-  success: { bg: '#DCFCE7', text: '#166534' },
-  warning: { bg: '#FEF3C7', text: '#92400E' },
-  error: { bg: '#FEE2E2', text: '#991B1B' },
+  info: { bg: '#e6f4ff', text: '#0958d9' },
+  success: { bg: '#f6ffed', text: '#389e0d' },
+  warning: { bg: '#fffbe6', text: '#d48806' },
+  error: { bg: '#fff2f0', text: '#cf1322' },
 }
 
 function ensureToastContainer(): HTMLElement {
