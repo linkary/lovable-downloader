@@ -6,6 +6,8 @@
 
 Lovable.dev 支持导出项目源代码，但需要先连接 GitHub 仓库。这个扩展跳过了这一步 — 点击图标，几秒内即可获得整个项目的 ZIP 文件。无需 GitHub，无需配置，即点即下。
 
+![](https://img.alicdn.com/imgextra/i1/O1CN01bPzMcU1XkBt6ZRgzh_!!6000000002961-1-tps-1248-664.gif)
+
 ## 安装
 
 ### 从 Chrome 应用商店安装（推荐）

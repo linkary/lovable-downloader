@@ -6,6 +6,8 @@ A Chrome extension for downloading [Lovable.dev](https://lovable.dev) project so
 
 Lovable.dev supports exporting project source code, but it requires connecting a GitHub repository. This extension skips that entirely — click the icon, get a ZIP of your entire project in seconds. No GitHub, no setup, no waiting.
 
+![](https://img.alicdn.com/imgextra/i1/O1CN01bPzMcU1XkBt6ZRgzh_!!6000000002961-1-tps-1248-664.gif)
+
 ## Install
 
 ### From Chrome Web Store (Recommended)
