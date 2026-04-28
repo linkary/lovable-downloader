@@ -110,7 +110,6 @@ chrome.action.onClicked.addListener(async (tab) => {
     await sendToast(tabId, 'info', `Using ref: ${ref}`, 3000, 'status')
 
     await sendToast(tabId, 'info', 'Fetching file list...', 4000, 'status')
-    setBadge('...', '#2196F3')
 
     let files: FileEntry[]
     try {
