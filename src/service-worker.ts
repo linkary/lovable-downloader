@@ -27,7 +27,13 @@ async function ensureContentScript(tabId: number): Promise<void> {
   })
 }
 
-async function sendToast(tabId: number, type: string, message: string, duration?: number, id?: string): Promise<void> {
+async function sendToast(
+  tabId: number,
+  type: string,
+  message: string,
+  duration?: number,
+  id?: string
+): Promise<void> {
   const payload = { type: 'SHOW_TOAST', toast: { type, message, duration, id } }
   try {
     await chrome.tabs.sendMessage(tabId, payload)
@@ -44,16 +50,14 @@ async function sendToast(tabId: number, type: string, message: string, duration?
 // --- webRequest: passively capture bearer token + git ref ---
 
 chrome.webRequest.onSendHeaders.addListener(
-  (details) => {
+  details => {
     const url = new URL(details.url)
 
     const projectMatch = url.pathname.match(/\/projects\/([^/]+)/)
     if (!projectMatch) return
     const projectId = projectMatch[1]
 
-    const authHeader = details.requestHeaders?.find(
-      (h) => h.name.toLowerCase() === 'authorization',
-    )
+    const authHeader = details.requestHeaders?.find(h => h.name.toLowerCase() === 'authorization')
     if (authHeader?.value) {
       chrome.storage.local.set({ [`token:${projectId}`]: authHeader.value })
     }
@@ -64,12 +68,12 @@ chrome.webRequest.onSendHeaders.addListener(
     }
   },
   { urls: [`${LOVABLE_API}/*`] },
-  ['requestHeaders', 'extraHeaders'],
+  ['requestHeaders', 'extraHeaders']
 )
 
 // --- Message handler: receive token from content script fallback ---
 
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener(message => {
   if (message.type === 'SUPABASE_TOKEN' && message.token) {
     chrome.storage.local.set({ fallbackToken: `Bearer ${message.token}` })
   }
@@ -77,7 +81,7 @@ chrome.runtime.onMessage.addListener((message) => {
 
 // --- action.onClicked: orchestrate download ---
 
-chrome.action.onClicked.addListener(async (tab) => {
+chrome.action.onClicked.addListener(async tab => {
   if (!tab.url || !tab.id) return
 
   const tabId = tab.id
@@ -101,7 +105,13 @@ chrome.action.onClicked.addListener(async (tab) => {
     await sendToast(tabId, 'info', 'Resolving authentication...', 4000, 'status')
     let token = await resolveToken(projectId, tabId)
     if (!token) {
-      await sendToast(tabId, 'error', 'Auth token not found. Please refresh the page.', 6000, 'status')
+      await sendToast(
+        tabId,
+        'error',
+        'Auth token not found. Please refresh the page.',
+        6000,
+        'status'
+      )
       return
     }
     await sendToast(tabId, 'info', 'Token acquired.', 3000, 'status')
@@ -120,7 +130,13 @@ chrome.action.onClicked.addListener(async (tab) => {
         await sendToast(tabId, 'warning', 'Token expired, re-authenticating...', 4000, 'status')
         token = await requestTokenFromContentScript(tabId, projectId)
         if (!token) {
-          await sendToast(tabId, 'error', 'Re-authentication failed. Please refresh and try again.', 6000, 'status')
+          await sendToast(
+            tabId,
+            'error',
+            'Re-authentication failed. Please refresh and try again.',
+            6000,
+            'status'
+          )
           throw new Error('Re-authentication failed')
         }
         files = await fetchFileList(projectId, token, ref, signal)
@@ -129,11 +145,30 @@ chrome.action.onClicked.addListener(async (tab) => {
       }
     }
 
-    await sendToast(tabId, 'info', `Downloading ${files.length} files...`, 4000, 'download-progress')
+    await sendToast(
+      tabId,
+      'info',
+      `Downloading ${files.length} files...`,
+      4000,
+      'download-progress'
+    )
 
-    const fileContents = await fetchAllFiles(projectId, files, token, ref, async (completed, total) => {
-      await sendToast(tabId, 'info', `Downloading files... (${completed}/${total})`, 4000, 'download-progress')
-    }, signal)
+    const fileContents = await fetchAllFiles(
+      projectId,
+      files,
+      token,
+      ref,
+      async (completed, total) => {
+        await sendToast(
+          tabId,
+          'info',
+          `Downloading files... (${completed}/${total})`,
+          4000,
+          'download-progress'
+        )
+      },
+      signal
+    )
 
     await updateProgressIcon(1)
     await sendToast(tabId, 'info', 'Creating ZIP archive...', 4000, 'status')
@@ -174,7 +209,9 @@ chrome.action.onClicked.addListener(async (tab) => {
 // --- URL parsing ---
 
 function parseProjectId(url: string): string | null {
-  const match = url.match(/lovable\.dev\/projects\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/)
+  const match = url.match(
+    /lovable\.dev\/projects\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/
+  )
   return match?.[1] ?? null
 }
 
@@ -190,7 +227,10 @@ async function resolveToken(projectId: string, tabId: number): Promise<string | 
   return requestTokenFromContentScript(tabId, projectId)
 }
 
-async function requestTokenFromContentScript(tabId: number, projectId: string): Promise<string | null> {
+async function requestTokenFromContentScript(
+  tabId: number,
+  projectId: string
+): Promise<string | null> {
   try {
     const response = await chrome.tabs.sendMessage(tabId, { type: 'REQUEST_TOKEN' })
     if (response?.token) {
@@ -221,10 +261,9 @@ async function fetchFileList(
   projectId: string,
   token: string,
   ref: string,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<FileEntry[]> {
-  const url =
-    `${LOVABLE_API}/projects/${encodeURIComponent(projectId)}/git/files?ref=${encodeURIComponent(ref)}`
+  const url = `${LOVABLE_API}/projects/${encodeURIComponent(projectId)}/git/files?ref=${encodeURIComponent(ref)}`
 
   const response = await fetch(url, {
     headers: { Authorization: token, Accept: 'application/json' },
@@ -253,7 +292,7 @@ async function fetchAllFiles(
   token: string,
   ref: string,
   onProgress?: (completed: number, total: number) => Promise<void>,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<Map<string, ArrayBuffer>> {
   const results = new Map<string, ArrayBuffer>()
   let completed = 0
@@ -263,9 +302,8 @@ async function fetchAllFiles(
     const batch = files.slice(i, i + CONCURRENCY)
 
     const batchResults = await Promise.allSettled(
-      batch.map(async (file) => {
-        const url =
-          `${LOVABLE_API}/projects/${encodeURIComponent(projectId)}/git/file?path=${encodeURIComponent(file.path)}&ref=${encodeURIComponent(ref)}`
+      batch.map(async file => {
+        const url = `${LOVABLE_API}/projects/${encodeURIComponent(projectId)}/git/file?path=${encodeURIComponent(file.path)}&ref=${encodeURIComponent(ref)}`
 
         const response = await fetch(url, {
           headers: { Authorization: token, Accept: '*/*' },
@@ -277,7 +315,7 @@ async function fetchAllFiles(
         }
 
         return { path: file.path, content: await response.arrayBuffer() }
-      }),
+      })
     )
 
     for (const result of batchResults) {
@@ -296,7 +334,7 @@ async function fetchAllFiles(
 
     if (i + CONCURRENCY < files.length) {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS))
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS))
     }
   }
 
@@ -341,9 +379,9 @@ function renderProgressIcon(icon: ImageBitmap, progress: number): ImageData {
       center,
       outerRadius - ringWidth / 2,
       -Math.PI / 2,
-      -Math.PI / 2 + Math.PI * 2 * Math.min(progress, 1),
+      -Math.PI / 2 + Math.PI * 2 * Math.min(progress, 1)
     )
-    ctx.strokeStyle = '#4CAF50'
+    ctx.strokeStyle = '#fff'
     ctx.lineWidth = ringWidth
     ctx.lineCap = 'round'
     ctx.stroke()
