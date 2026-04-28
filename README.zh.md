@@ -8,6 +8,16 @@ Lovable.dev 支持导出项目源代码，但需要先连接 GitHub 仓库。这
 
 ## 安装
 
+### 从 GitHub Releases 下载
+
+1. 从 [Releases](../../releases) 下载最新的 `extension-*.zip`
+2. 解压文件
+3. 打开 `chrome://extensions`
+4. 开启「开发者模式」
+5. 点击「加载已解压的扩展程序」，选择解压后的文件夹
+
+### 从源码构建
+
 ```bash
 npm install
 npm run build

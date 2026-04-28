@@ -8,6 +8,16 @@ Lovable.dev supports exporting project source code, but it requires connecting a
 
 ## Install
 
+### From GitHub Releases
+
+1. Download the latest `extension-*.zip` from [Releases](../../releases)
+2. Unzip the file
+3. Open `chrome://extensions`
+4. Enable "Developer mode"
+5. Click "Load unpacked" and select the unzipped folder
+
+### Build from source
+
 ```bash
 npm install
 npm run build
