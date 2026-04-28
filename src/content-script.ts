@@ -129,7 +129,7 @@ script.onload = () => script.remove()
 
 window.addEventListener('message', (event) => {
   if (event.source !== window) return
-  if (event.data?.type !== 'LOVEABLE_SUPABASE_TOKEN') return
+  if (event.data?.type !== 'LOVABLE_SUPABASE_TOKEN') return
 
   chrome.runtime.sendMessage({
     type: 'SUPABASE_TOKEN',
@@ -147,10 +147,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type !== 'REQUEST_TOKEN') return false
 
-  window.postMessage({ type: 'LOVEABLE_REQUEST_TOKEN' }, '*')
+  window.postMessage({ type: 'LOVABLE_REQUEST_TOKEN' }, '*')
 
   const handler = (event: MessageEvent) => {
-    if (event.data?.type !== 'LOVEABLE_SUPABASE_TOKEN') return
+    if (event.data?.type !== 'LOVABLE_SUPABASE_TOKEN') return
     window.removeEventListener('message', handler)
     sendResponse({ token: event.data.token })
   }

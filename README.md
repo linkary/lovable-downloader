@@ -1,4 +1,4 @@
-# Loveable Downloader
+# Lovable Downloader
 
 [中文](./README.zh.md)
 
@@ -32,7 +32,7 @@ Load the `build/` directory as an unpacked extension in Chrome:
 ## Usage
 
 1. Navigate to any project on [lovable.dev](https://lovable.dev)
-2. Click the Loveable Downloader icon in the toolbar
+2. Click the Lovable Downloader icon in the toolbar
 3. Wait for the progress ring to complete
 4. Save the ZIP file when prompted
 

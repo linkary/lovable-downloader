@@ -1,4 +1,4 @@
-# Loveable Downloader
+# Lovable Downloader
 
 [English](./README.md)
 
@@ -32,7 +32,7 @@ npm run build
 ## 使用方法
 
 1. 在 [lovable.dev](https://lovable.dev) 上打开任意项目页面
-2. 点击工具栏中的 Loveable Downloader 图标
+2. 点击工具栏中的 Lovable Downloader 图标
 3. 等待进度环完成
 4. 在弹出的保存对话框中保存 ZIP 文件
 

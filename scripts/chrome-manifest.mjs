@@ -14,7 +14,7 @@ const icons = {
 
 export default {
   manifest_version: 3,
-  name: 'Loveable Downloader',
+  name: 'Lovable Downloader',
   description: 'Download Lovable.dev project source code as ZIP',
   version: pkg.version,
 
@@ -47,7 +47,7 @@ export default {
 
   action: {
     default_icon: icons,
-    default_title: 'Loveable Downloader',
+    default_title: 'Lovable Downloader',
   },
 
   icons,
