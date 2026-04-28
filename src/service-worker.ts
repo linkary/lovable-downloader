@@ -1,4 +1,5 @@
 import JSZip from 'jszip'
+import { parseProjectId } from './utils'
 
 // --- Constants ---
 
@@ -205,15 +206,6 @@ chrome.action.onClicked.addListener(async tab => {
     downloadController = null
   }
 })
-
-// --- URL parsing ---
-
-function parseProjectId(url: string): string | null {
-  const match = url.match(
-    /lovable\.dev\/projects\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/
-  )
-  return match?.[1] ?? null
-}
 
 // --- Token resolution ---
 

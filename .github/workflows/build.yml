@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  push:
+    branches: ['*']
+  pull_request:
+    branches: [main, work]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - run: npm run build:zip
+
+      - name: Get version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-${{ steps.version.outputs.version }}
+          path: build/extension-${{ steps.version.outputs.version }}.zip

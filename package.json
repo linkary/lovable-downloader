@@ -7,7 +7,8 @@
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "build:zip": "node scripts/build.mjs && node scripts/chrome-zip.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "author": "",
   "license": "MIT",
@@ -18,6 +19,7 @@
     "@types/chrome": "^0.1.32",
     "esbuild": "^0.25.0",
     "prettier": "^3.7.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.5"
   }
 }

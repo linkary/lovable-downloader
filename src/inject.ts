@@ -1,22 +1,6 @@
-function getSupabaseToken(): string | null {
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key && /^sb-.*-auth-token$/.test(key)) {
-      try {
-        const raw = localStorage.getItem(key)
-        if (!raw) continue
-        const parsed = JSON.parse(raw)
-        if (parsed.access_token) return parsed.access_token
-      } catch {
-        continue
-      }
-    }
-  }
-  return null
-}
+import { findSupabaseToken } from './utils'
 
-// Send token proactively on load
-const token = getSupabaseToken()
+const token = findSupabaseToken(localStorage)
 if (token) {
   window.postMessage({ type: 'LOVEABLE_SUPABASE_TOKEN', token }, '*')
 }
@@ -26,7 +10,7 @@ window.addEventListener('message', (event) => {
   if (event.source !== window) return
   if (event.data?.type !== 'LOVEABLE_REQUEST_TOKEN') return
 
-  const t = getSupabaseToken()
+  const t = findSupabaseToken(localStorage)
   window.postMessage(
     { type: 'LOVEABLE_SUPABASE_TOKEN', token: t },
     '*',
