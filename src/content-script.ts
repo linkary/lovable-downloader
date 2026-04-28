@@ -16,11 +16,11 @@ let toastHost: HTMLElement | null = null
 let toastContainer: HTMLElement | null = null
 const activeToasts = new Map<string, ToastEntry>()
 
-const BORDER_COLORS: Record<string, string> = {
-  info: '#1677ff',
-  success: '#52c41a',
-  warning: '#faad14',
-  error: '#ff4d4f',
+const TOAST_STYLES: Record<string, { bg: string; text: string }> = {
+  info: { bg: '#E5DEFF', text: '#6E59A5' },
+  success: { bg: '#DCFCE7', text: '#166534' },
+  warning: { bg: '#FEF3C7', text: '#92400E' },
+  error: { bg: '#FEE2E2', text: '#991B1B' },
 }
 
 function ensureToastContainer(): HTMLElement {
@@ -39,22 +39,20 @@ function ensureToastContainer(): HTMLElement {
       z-index: 2147483647;
       display: flex;
       flex-direction: column;
+      gap: 8px;
       pointer-events: none;
     }
     .toast {
       padding: 10px 16px;
-      border-radius: 8px;
-      background: #fff;
-      color: rgba(0, 0, 0, 0.85);
+      border-radius: 10px;
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
       font-size: 14px;
       line-height: 1.5;
       max-width: 360px;
       min-width: 200px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.08), 0 3px 6px rgba(0,0,0,0.12);
-      border-left: 4px solid #1677ff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
       pointer-events: auto;
       overflow: hidden;
-      margin-bottom: 8px;
       max-height: 80px;
       animation: toast-enter 0.3s cubic-bezier(0.215, 0.61, 0.355, 1);
       transition: all 0.3s cubic-bezier(0.215, 0.61, 0.355, 1);
@@ -74,10 +72,13 @@ function ensureToastContainer(): HTMLElement {
 }
 
 function showToast({ type, message, duration = 4000, id }: ToastOptions): void {
+  const style = TOAST_STYLES[type] ?? TOAST_STYLES.info
+
   if (id && activeToasts.has(id)) {
     const entry = activeToasts.get(id)!
     entry.el.textContent = message
-    entry.el.style.borderLeftColor = BORDER_COLORS[type] ?? BORDER_COLORS.info
+    entry.el.style.backgroundColor = style.bg
+    entry.el.style.color = style.text
     clearTimeout(entry.timer)
     entry.timer = scheduleDismiss(entry.el, duration, id)
     return
@@ -86,7 +87,8 @@ function showToast({ type, message, duration = 4000, id }: ToastOptions): void {
   const container = ensureToastContainer()
   const el = document.createElement('div')
   el.className = 'toast'
-  el.style.borderLeftColor = BORDER_COLORS[type] ?? BORDER_COLORS.info
+  el.style.backgroundColor = style.bg
+  el.style.color = style.text
   el.textContent = message
   container.appendChild(el)
 
@@ -110,7 +112,6 @@ function dismissToast(el: HTMLElement, id?: string): void {
   // Phase 2: collapse space
   setTimeout(() => {
     el.style.maxHeight = '0'
-    el.style.marginBottom = '0'
     el.style.paddingTop = '0'
     el.style.paddingBottom = '0'
     setTimeout(() => el.remove(), 300)

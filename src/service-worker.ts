@@ -16,6 +16,7 @@ const DEFAULT_ICONS: Record<string, string> = {
 // --- State ---
 
 let isDownloading = false
+let downloadController: AbortController | null = null
 
 // --- Toast helper ---
 
@@ -87,11 +88,14 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 
   if (isDownloading) {
-    await sendToast(tabId, 'warning', 'A download is already in progress.')
+    downloadController?.abort()
+    await sendToast(tabId, 'info', 'Download cancelled.', 3000)
     return
   }
 
   isDownloading = true
+  downloadController = new AbortController()
+  const signal = downloadController.signal
 
   try {
     await sendToast(tabId, 'info', 'Resolving authentication...', 4000, 'status')
@@ -110,7 +114,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
     let files: FileEntry[]
     try {
-      files = await fetchFileList(projectId, token, ref)
+      files = await fetchFileList(projectId, token, ref, signal)
     } catch (err) {
       if (err instanceof Error && err.message.includes('401')) {
         await chrome.storage.local.remove([`token:${projectId}`, 'fallbackToken'])
@@ -120,7 +124,7 @@ chrome.action.onClicked.addListener(async (tab) => {
           await sendToast(tabId, 'error', 'Re-authentication failed. Please refresh and try again.', 6000, 'status')
           throw new Error('Re-authentication failed')
         }
-        files = await fetchFileList(projectId, token, ref)
+        files = await fetchFileList(projectId, token, ref, signal)
       } else {
         throw err
       }
@@ -130,7 +134,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
     const fileContents = await fetchAllFiles(projectId, files, token, ref, async (completed, total) => {
       await sendToast(tabId, 'info', `Downloading files... (${completed}/${total})`, 4000, 'download-progress')
-    })
+    }, signal)
 
     await updateProgressIcon(1)
     await sendToast(tabId, 'info', 'Creating ZIP archive...', 4000, 'status')
@@ -153,13 +157,18 @@ chrome.action.onClicked.addListener(async (tab) => {
     setBadge('OK', '#4CAF50')
     setTimeout(() => resetIcon(), 3000)
   } catch (err) {
-    console.error('Download failed:', err)
-    const reason = err instanceof Error ? err.message : 'Unknown error'
-    await sendToast(tabId, 'error', `Download failed: ${reason}`, 6000)
-    setBadge('ERR', '#F44336')
-    setTimeout(() => resetIcon(), 5000)
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      resetIcon()
+    } else {
+      console.error('Download failed:', err)
+      const reason = err instanceof Error ? err.message : 'Unknown error'
+      await sendToast(tabId, 'error', `Download failed: ${reason}`, 6000)
+      setBadge('ERR', '#F44336')
+      setTimeout(() => resetIcon(), 5000)
+    }
   } finally {
     isDownloading = false
+    downloadController = null
   }
 })
 
@@ -213,12 +222,14 @@ async function fetchFileList(
   projectId: string,
   token: string,
   ref: string,
+  signal?: AbortSignal,
 ): Promise<FileEntry[]> {
   const url =
     `${LOVABLE_API}/projects/${encodeURIComponent(projectId)}/git/files?ref=${encodeURIComponent(ref)}`
 
   const response = await fetch(url, {
     headers: { Authorization: token, Accept: 'application/json' },
+    signal,
   })
 
   if (response.status === 401) {
@@ -243,6 +254,7 @@ async function fetchAllFiles(
   token: string,
   ref: string,
   onProgress?: (completed: number, total: number) => Promise<void>,
+  signal?: AbortSignal,
 ): Promise<Map<string, ArrayBuffer>> {
   const results = new Map<string, ArrayBuffer>()
   let completed = 0
@@ -258,6 +270,7 @@ async function fetchAllFiles(
 
         const response = await fetch(url, {
           headers: { Authorization: token, Accept: '*/*' },
+          signal,
         })
 
         if (!response.ok) {
@@ -283,6 +296,7 @@ async function fetchAllFiles(
     }
 
     if (i + CONCURRENCY < files.length) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
       await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS))
     }
   }
@@ -329,14 +343,6 @@ function renderProgressIcon(progress: number): ImageData {
     ctx.lineCap = 'round'
     ctx.stroke()
   }
-
-  // Center percentage text
-  const pct = Math.round(progress * 100)
-  ctx.fillStyle = '#333'
-  ctx.font = `bold ${pct === 100 ? 28 : 32}px sans-serif`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(`${pct}%`, center, center)
 
   return ctx.getImageData(0, 0, SIZE, SIZE)
 }
