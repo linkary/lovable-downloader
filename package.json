@@ -1,0 +1,22 @@
+{
+  "name": "loveable-downloader",
+  "version": "1.0.0",
+  "description": "Chrome extension to download Lovable.dev project source code as ZIP",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:zip": "node scripts/build.mjs && node scripts/chrome-zip.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.32",
+    "esbuild": "^0.25.0",
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.3"
+  }
+}
