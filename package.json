@@ -4,6 +4,7 @@
   "description": "Chrome extension to download Lovable.dev project source code as ZIP",
   "private": true,
   "scripts": {
+    "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "build:zip": "node scripts/build.mjs && node scripts/chrome-zip.mjs",
     "typecheck": "tsc --noEmit"

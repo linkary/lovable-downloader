@@ -19,8 +19,8 @@ export default {
   version: pkg.version,
 
   permissions: [
-    'declarativeContent',
     'activeTab',
+    'scripting',
     'storage',
     'webRequest',
     'downloads',

@@ -13,22 +13,32 @@ const DEFAULT_ICONS: Record<string, string> = {
   128: 'images/128.png',
 }
 
-// --- declarativeContent: enable icon only on lovable.dev/projects/* ---
+// --- State ---
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.action.disable()
+let isDownloading = false
 
-  chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
-    chrome.declarativeContent.onPageChanged.addRules([{
-      conditions: [
-        new chrome.declarativeContent.PageStateMatcher({
-          pageUrl: { hostEquals: 'lovable.dev', pathPrefix: '/projects/' },
-        }),
-      ],
-      actions: [new chrome.declarativeContent.ShowAction()],
-    }])
+// --- Toast helper ---
+
+async function ensureContentScript(tabId: number): Promise<void> {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ['content-script.js'],
   })
-})
+}
+
+async function sendToast(tabId: number, type: string, message: string, duration?: number, id?: string): Promise<void> {
+  const payload = { type: 'SHOW_TOAST', toast: { type, message, duration, id } }
+  try {
+    await chrome.tabs.sendMessage(tabId, payload)
+  } catch {
+    try {
+      await ensureContentScript(tabId)
+      await chrome.tabs.sendMessage(tabId, payload)
+    } catch (err) {
+      console.warn('Toast delivery failed:', err)
+    }
+  }
+}
 
 // --- webRequest: passively capture bearer token + git ref ---
 
@@ -69,43 +79,61 @@ chrome.runtime.onMessage.addListener((message) => {
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab.url || !tab.id) return
 
+  const tabId = tab.id
   const projectId = parseProjectId(tab.url)
   if (!projectId) {
-    setBadge('ERR', '#F44336')
+    await sendToast(tabId, 'error', 'Not a valid Lovable project page.', 6000)
     return
   }
 
+  if (isDownloading) {
+    await sendToast(tabId, 'warning', 'A download is already in progress.')
+    return
+  }
+
+  isDownloading = true
+
   try {
-    let token = await resolveToken(projectId, tab.id)
+    await sendToast(tabId, 'info', 'Resolving authentication...', 4000, 'status')
+    let token = await resolveToken(projectId, tabId)
     if (!token) {
-      setBadge('AUTH', '#F44336')
+      await sendToast(tabId, 'error', 'Auth token not found. Please refresh the page.', 6000, 'status')
       return
     }
+    await sendToast(tabId, 'info', 'Token acquired.', 3000, 'status')
 
     const ref = await resolveRef(projectId)
+    await sendToast(tabId, 'info', `Using ref: ${ref}`, 3000, 'status')
 
+    await sendToast(tabId, 'info', 'Fetching file list...', 4000, 'status')
     setBadge('...', '#2196F3')
 
     let files: FileEntry[]
     try {
       files = await fetchFileList(projectId, token, ref)
     } catch (err) {
-      // On 401, retry with fresh token from content script
       if (err instanceof Error && err.message.includes('401')) {
         await chrome.storage.local.remove([`token:${projectId}`, 'fallbackToken'])
-        token = await requestTokenFromContentScript(tab.id, projectId)
-        if (!token) throw new Error('Re-authentication failed')
+        await sendToast(tabId, 'warning', 'Token expired, re-authenticating...', 4000, 'status')
+        token = await requestTokenFromContentScript(tabId, projectId)
+        if (!token) {
+          await sendToast(tabId, 'error', 'Re-authentication failed. Please refresh and try again.', 6000, 'status')
+          throw new Error('Re-authentication failed')
+        }
         files = await fetchFileList(projectId, token, ref)
       } else {
         throw err
       }
     }
 
-    console.log(`Found ${files.length} files`)
+    await sendToast(tabId, 'info', `Downloading ${files.length} files...`, 4000, 'download-progress')
 
-    const fileContents = await fetchAllFiles(projectId, files, token, ref)
+    const fileContents = await fetchAllFiles(projectId, files, token, ref, async (completed, total) => {
+      await sendToast(tabId, 'info', `Downloading files... (${completed}/${total})`, 4000, 'download-progress')
+    })
 
     await updateProgressIcon(1)
+    await sendToast(tabId, 'info', 'Creating ZIP archive...', 4000, 'status')
     setBadge('ZIP', '#4CAF50')
 
     const zip = new JSZip()
@@ -121,19 +149,24 @@ chrome.action.onClicked.addListener(async (tab) => {
       saveAs: true,
     })
 
+    await sendToast(tabId, 'success', 'Project downloaded successfully!', 3000)
     setBadge('OK', '#4CAF50')
     setTimeout(() => resetIcon(), 3000)
   } catch (err) {
     console.error('Download failed:', err)
+    const reason = err instanceof Error ? err.message : 'Unknown error'
+    await sendToast(tabId, 'error', `Download failed: ${reason}`, 6000)
     setBadge('ERR', '#F44336')
     setTimeout(() => resetIcon(), 5000)
+  } finally {
+    isDownloading = false
   }
 })
 
 // --- URL parsing ---
 
 function parseProjectId(url: string): string | null {
-  const match = url.match(/lovable\.dev\/projects\/([a-f0-9-]+)/)
+  const match = url.match(/lovable\.dev\/projects\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/)
   return match?.[1] ?? null
 }
 
@@ -209,6 +242,7 @@ async function fetchAllFiles(
   files: FileEntry[],
   token: string,
   ref: string,
+  onProgress?: (completed: number, total: number) => Promise<void>,
 ): Promise<Map<string, ArrayBuffer>> {
   const results = new Map<string, ArrayBuffer>()
   let completed = 0
@@ -242,6 +276,10 @@ async function fetchAllFiles(
         console.error('File download failed:', result.reason)
       }
       await updateProgressIcon(completed / total)
+    }
+
+    if (onProgress) {
+      await onProgress(completed, total)
     }
 
     if (i + CONCURRENCY < files.length) {
