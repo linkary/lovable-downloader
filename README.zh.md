@@ -8,6 +8,10 @@ Lovable.dev 支持导出项目源代码，但需要先连接 GitHub 仓库。这
 
 ## 安装
 
+### 从 Chrome 应用商店安装（推荐）
+
+直接从 [Chrome 应用商店](https://chromewebstore.google.com/detail/lovable-downloader/cnemhgoighlimfpldmdiblekokblokho) 安装。
+
 ### 从 GitHub Releases 下载
 
 1. 从 [Releases](../../releases) 下载最新的 `extension-*.zip`

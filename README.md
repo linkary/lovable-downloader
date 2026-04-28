@@ -8,6 +8,10 @@ Lovable.dev supports exporting project source code, but it requires connecting a
 
 ## Install
 
+### From Chrome Web Store (Recommended)
+
+Install directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/lovable-downloader/cnemhgoighlimfpldmdiblekokblokho).
+
 ### From GitHub Releases
 
 1. Download the latest `extension-*.zip` from [Releases](../../releases)
