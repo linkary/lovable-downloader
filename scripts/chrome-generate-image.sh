@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-name="public/cactus-round.png"
+name="public/icon.png"
 target_color="build/images"
 target_grey="build/images-grey"
 

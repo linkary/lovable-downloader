@@ -31,7 +31,7 @@ async function run() {
   execSync('node scripts/chrome-prebuild.mjs', { cwd: root, stdio: 'inherit' })
 
   // Generate icons if ImageMagick is available and source icon exists
-  const iconSource = resolve(root, 'public/cactus-round.png')
+  const iconSource = resolve(root, 'public/icon.png')
   if (existsSync(iconSource)) {
     try {
       execSync('bash scripts/chrome-generate-image.sh', { cwd: root, stdio: 'inherit' })
